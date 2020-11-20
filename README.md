@@ -1,4 +1,4 @@
-# Android IPC Test
+# Android IPC Latency Test
 
 Tests latency 3 approaches of inter-process communication on Android between two separate apps.
 The provider runs a `ForegroundService` and calls a native method. The measured latency includes the latency of JNI (< 100us)
