@@ -1,5 +1,9 @@
 package com.lrptest.daemon;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -13,7 +17,8 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
-    // Used to load the 'native-lib' library on application startup.
+    final static String TAG = "LRP_LOG_DAEMON_ACT";
+
     static {
         System.loadLibrary("native-lib");
     }
@@ -24,22 +29,31 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        ArrayList<String> results = benchmark();
+        results.forEach((s) -> {
+            Log.i(TAG, s);
+        });
+        ((TextView)findViewById(R.id.result_text)).setText(String.join("\n", results));
+
+        Intent intent = new Intent(this, LrpService.class);
+        startForegroundService(intent);
+    }
+
+    public ArrayList<String> benchmark() {
         ArrayList<String> results = new ArrayList<String>();
 
-        results.add("Start time (native): " + getNativeTime() + " us");
-        results.add("Start time (system): " + getTime() + " us");
+        results.add("Start time (native): " + LrpHandler.getNativeTime() / 1000 + " ms");
+        results.add("Start time (system): " + getTime() + " ms");
+
+        results.add("5ms sleep (native): " + LrpHandler.doNativeWork() + " us");
 
         long jniOverhead = getJNIOverhead();
         results.add("JNI overhead: " + jniOverhead + " us per call");
 
-        long clockOffset = getTime() * 1000 - getNativeTime();
-        results.add("Clock offset: " + clockOffset + " us");
+        long clockOffset = Math.round(Math.ceil(Math.abs(getTime() - LrpHandler.getNativeTime() / 1000.0)));
+        results.add("Clock offset: " + clockOffset + " ms");
 
-        results.forEach((s) -> {
-            Log.i("LRP_DAEMON", s);
-        });
-
-        ((TextView)findViewById(R.id.result_text)).setText(String.join("\n", results));
+        return results;
     }
 
     public long getTime() {
@@ -47,18 +61,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public int getJNIOverhead() {
-        final int iterations = 1000;
+        final int iterations = 10;
         int totalTime = 0;
 
         for (int i = 0; i < iterations; i++) {
-            long time1 = getNativeTime();
-            long time2 = getNativeTime();
+            long t1 = System.nanoTime();
+            long nTime = LrpHandler.doNativeWork();
+            long t2 = System.nanoTime();
 
-            totalTime += (time2 - time1);
+            totalTime += ((t2 - t1) / 1000 - nTime);
         }
 
-        return totalTime / iterations / 2;
+        return totalTime / iterations;
     }
-
-    public native long getNativeTime();
 }
