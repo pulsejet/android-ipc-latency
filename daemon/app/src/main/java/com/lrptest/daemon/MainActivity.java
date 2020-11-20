@@ -19,6 +19,8 @@ public class MainActivity extends AppCompatActivity {
         System.loadLibrary("native-lib");
     }
 
+    LrpClient client = null;
+
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +35,16 @@ public class MainActivity extends AppCompatActivity {
 
         Intent intent = new Intent(this, LrpService.class);
         startForegroundService(intent);
+
+        // Test code
+        /* new Timer().scheduleAtFixedRate(new TimerTask(){
+            @Override
+            public void run(){
+                if (client == null) client = new LrpClient();
+                Log.i(TAG, "SENDING");
+                client.measureSocket();
+            }
+        },0,2000); */
     }
 
     public ArrayList<String> benchmark() {

@@ -1,11 +1,7 @@
 package com.lrptest.daemon;
 
-import android.content.Context;
-import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -59,22 +55,12 @@ public class LrpUDP {
 
                     final String message = "measureUdp(): " + res + " us";
                     Log.i(TAG, message);
-                    toast(message);
+                    LrpHandler.toastWithHandler(eventHandler, message);
                 } catch (IOException e) {
                     Log.e(TAG, "Shutting down LRP UDP");
                     looping = false;
                 }
             }
         }
-    }
-
-    private void toast(String text) {
-        if (eventHandler == null) return;
-        Message message = eventHandler.obtainMessage();
-        Bundle bundle = new Bundle();
-        bundle.putString("action", "toast");
-        bundle.putString("text", text);
-        message.setData(bundle);
-        message.sendToTarget();
     }
 }

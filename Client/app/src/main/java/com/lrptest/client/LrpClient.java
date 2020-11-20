@@ -9,7 +9,7 @@ import java.net.InetAddress;
 
 public class LrpClient extends Thread {
     public final String TAG = "LRP_LOG_CLIENT";
-    private DatagramPacket packet;
+    private DatagramPacket datagram;
     private boolean active = false;
 
     LrpClient() {
@@ -18,12 +18,12 @@ public class LrpClient extends Thread {
 
     @Override
     public void run() {
-        DatagramSocket clientSocket = null;
+        // UDP Client
+        DatagramSocket udpClientSocket = null;
         try {
-            clientSocket = new DatagramSocket();
+            udpClientSocket = new DatagramSocket();
         } catch (IOException e) {
             Log.e(TAG, "Failed to create DatagramSocket: " + e.getMessage());
-            return;
         }
 
         active = true;
@@ -36,13 +36,15 @@ public class LrpClient extends Thread {
                     return;
                 }
 
-                if (packet != null) {
+                if (datagram != null) {
                     Log.d(TAG, "Sending LRP packet");
                     try {
-                        clientSocket.send(packet);
-                        packet = null;
+                        if (udpClientSocket != null)
+                            udpClientSocket.send(datagram);
+                        datagram = null;
                     } catch (IOException e) {
-                        Log.e(TAG, "Sending LRP packet failed");
+                        Log.e(TAG, "Sending LRP packet failed: " + e.getMessage());
+                        e.printStackTrace();
                     }
                 }
             }
@@ -54,8 +56,8 @@ public class LrpClient extends Thread {
 
         byte[] sendData = Long.toString(System.nanoTime()).getBytes();
         InetAddress IPAddress = InetAddress.getLoopbackAddress();
-        packet = new DatagramPacket(sendData, sendData.length, IPAddress, 15113);
-        packet.setLength(sendData.length);
+        datagram = new DatagramPacket(sendData, sendData.length, IPAddress, 15113);
+        datagram.setLength(sendData.length);
 
         synchronized (this) {
             notify();

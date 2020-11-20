@@ -3,6 +3,8 @@ package com.lrptest.daemon;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -38,6 +40,16 @@ public class LrpHandler {
         long nTime = doNativeWork();
         long t2 = System.nanoTime() / 1000;
         return t2 - nTime - pastMicro;
+    }
+
+    public static void toastWithHandler(Handler eventHandler, String text) {
+        if (eventHandler == null) return;
+        Message message = eventHandler.obtainMessage();
+        Bundle bundle = new Bundle();
+        bundle.putString("action", "toast");
+        bundle.putString("text", text);
+        message.setData(bundle);
+        message.sendToTarget();
     }
 
     public static native long getNativeTime();
