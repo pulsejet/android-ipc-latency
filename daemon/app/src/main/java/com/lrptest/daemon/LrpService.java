@@ -5,6 +5,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -75,7 +76,7 @@ public class LrpService extends Service {
         udpServer = new LrpUDP(eventHandler);
 
         Toast.makeText(this, "LRP service started", Toast.LENGTH_SHORT).show();
-        return START_STICKY;
+        return START_NOT_STICKY;
     }
 
     public class ActionReceiver extends BroadcastReceiver {
@@ -88,11 +89,20 @@ public class LrpService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return binder;
     }
 
     @Override
     public void onDestroy() {
         Toast.makeText(this, "LRP service terminated", Toast.LENGTH_SHORT).show();
     }
+
+    private final ILrpBoundService.Stub binder = new ILrpBoundService.Stub() {
+        public void measure(long nanoTime){
+            final long sendTime = nanoTime / 1000;
+            final String message = "measure(): " + LrpHandler.measureFromPast(sendTime) + " us";
+            Log.i(TAG, message);
+            LrpHandler.toastWithHandler(eventHandler, message);
+        }
+    };
 }

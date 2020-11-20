@@ -16,7 +16,10 @@
             </intent-filter>
         </activity>
 
-        <service android:name=".LrpService" />
+        <service
+            android:name=".LrpService"
+            android:exported="true"
+            />
     </application>
 
     <uses-permission android:name="android.permission.INTERNET"/>

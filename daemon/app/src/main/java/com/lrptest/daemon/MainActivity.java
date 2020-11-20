@@ -1,8 +1,12 @@
 package com.lrptest.daemon;
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.util.Log;
 import android.widget.TextView;
 
@@ -34,17 +38,7 @@ public class MainActivity extends AppCompatActivity {
         ((TextView)findViewById(R.id.result_text)).setText(String.join("\n", results));
 
         Intent intent = new Intent(this, LrpService.class);
-        startForegroundService(intent);
-
-        // Test code
-        /* new Timer().scheduleAtFixedRate(new TimerTask(){
-            @Override
-            public void run(){
-                if (client == null) client = new LrpClient();
-                Log.i(TAG, "SENDING");
-                client.measureSocket();
-            }
-        },0,2000); */
+        startService(intent);
     }
 
     public ArrayList<String> benchmark() {
@@ -82,4 +76,17 @@ public class MainActivity extends AppCompatActivity {
 
         return totalTime / iterations;
     }
+
+    ILrpBoundService mBoundService = null;
+    private final ServiceConnection boundServiceConnection = new ServiceConnection() {
+        public void onServiceConnected(ComponentName className, IBinder service) {
+            Log.i(TAG, "LRP service connected");
+            mBoundService =  ILrpBoundService.Stub.asInterface(service);
+        }
+
+        public void onServiceDisconnected(ComponentName className) {
+            Log.e(TAG, "LRP service disconnected");
+            mBoundService = null;
+        }
+    };
 }
