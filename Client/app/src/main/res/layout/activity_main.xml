@@ -36,4 +36,11 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="intent measure()" />
+
+    <Button
+        android:id="@+id/udp_hello_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="udp measure()" />
 </LinearLayout>

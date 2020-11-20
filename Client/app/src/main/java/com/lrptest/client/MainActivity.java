@@ -12,6 +12,7 @@ import android.widget.Switch;
 public class MainActivity extends AppCompatActivity {
 
     final String tag = "LRP_LOG_CLIENT";
+    LrpClient lrpClient = new LrpClient();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,6 +31,11 @@ public class MainActivity extends AppCompatActivity {
             Log.i(tag, "measure()");
             Intent it = new Intent("com.lrptest.daemon.measure");
             getBaseContext().sendBroadcast(putMeta(it));
+        });
+
+        findViewById(R.id.udp_hello_btn).setOnClickListener(v -> {
+            Log.i(tag, "udphello()");
+            lrpClient.measure();
         });
     }
 

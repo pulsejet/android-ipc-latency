@@ -10,7 +10,10 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.Color;
 import android.os.Build;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -19,6 +22,8 @@ import androidx.annotation.RequiresApi;
 public class LrpService extends Service {
     private static final int ONGOING_NOTIFICATION_ID = 1000;
     final static String TAG = "LRP_LOG_DAEMON_SRV";
+    private LrpUDP udpServer = null;
+    private Handler eventHandler = null;
 
     @RequiresApi(api = Build.VERSION_CODES.O)
     @Override
@@ -46,11 +51,28 @@ public class LrpService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        // Register intent receivers
         LrpService.ActionReceiver receiver = new LrpService.ActionReceiver();
         IntentFilter filter = new IntentFilter();
         filter.addAction("com.lrptest.daemon.toast");
         filter.addAction("com.lrptest.daemon.measure");
         registerReceiver(receiver, filter);
+
+        // Start UDP server
+        eventHandler = new Handler(Looper.getMainLooper()) {
+            @Override
+            public void handleMessage(Message message) {
+                final String action = message.getData().getString("action");
+
+                switch (action.toLowerCase()) {
+                    case "toast":
+                        final String value = message.getData().getString("text");
+                        Toast.makeText(getApplicationContext(), value, Toast.LENGTH_SHORT).show();
+                        break;
+                }
+            }
+        };
+        udpServer = new LrpUDP(eventHandler);
 
         Toast.makeText(this, "LRP service started", Toast.LENGTH_SHORT).show();
         return START_STICKY;

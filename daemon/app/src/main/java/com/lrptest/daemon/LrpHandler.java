@@ -7,7 +7,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 public class LrpHandler {
-    final static String TAG = "LRP_DAEMON";
+    final static String TAG = "LRP_LOG_DAEMON";
 
     public static void handleIntent(Intent intent) {
         handleIntent(intent, null);
@@ -24,18 +24,20 @@ public class LrpHandler {
                 break;
 
             case "com.lrptest.daemon.measure":
-                final long sendMicroTime = bundle.getLong("nanoTime") / 1000;
-
-                long nTime = doNativeWork();
-                long t2 = System.nanoTime() / 1000;
-
-                final String message = "measure(): " + (t2 - nTime - sendMicroTime) + " us";
+                final long sendTime = bundle.getLong("nanoTime") / 1000;
+                final String message = "measure(): " + measureFromPast(sendTime) + " us";
                 Log.i(TAG, message);
 
                 if (toast)
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show();
                 break;
         }
+    }
+
+    public static long measureFromPast(long pastMicro) {
+        long nTime = doNativeWork();
+        long t2 = System.nanoTime() / 1000;
+        return t2 - nTime - pastMicro;
     }
 
     public static native long getNativeTime();
