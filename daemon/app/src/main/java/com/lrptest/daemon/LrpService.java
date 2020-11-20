@@ -76,7 +76,7 @@ public class LrpService extends Service {
         udpServer = new LrpUDP(eventHandler);
 
         Toast.makeText(this, "LRP service started", Toast.LENGTH_SHORT).show();
-        return START_NOT_STICKY;
+        return START_STICKY;
     }
 
     public class ActionReceiver extends BroadcastReceiver {

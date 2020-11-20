@@ -8,3 +8,4 @@ The average results are given below, when tested on Android 11.
 * `BoundService` (AIDL): 300-800 us (usually ~500 us)
 
 AIDL gives the best latency as expected.
+Note that these results are approximate, poorly averaged (small sample set) and do not reflect real world conditions.
