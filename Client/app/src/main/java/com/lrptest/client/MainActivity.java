@@ -25,6 +25,8 @@ import java.net.UnknownHostException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -33,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     ILrpBoundService mBoundService = null;
 
     ScheduledExecutorService ses = Executors.newScheduledThreadPool(4);
+    java.util.concurrent.ScheduledFuture<?> currentFuture = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,7 +75,19 @@ public class MainActivity extends AppCompatActivity {
         });
 
         findViewById(R.id.measure_ping).setOnClickListener(v -> {
-            ping();
+            ping(false, false);
+        });
+
+        findViewById(R.id.measure_ping_periodic).setOnClickListener(v -> {
+            ping(true, false);
+        });
+
+        findViewById(R.id.measure_ping_aidl).setOnClickListener(v -> {
+            ping(false, true);
+        });
+
+        findViewById(R.id.measure_ping_periodic_aidl).setOnClickListener(v -> {
+            ping(true, true);
         });
     }
 
@@ -86,34 +101,65 @@ public class MainActivity extends AppCompatActivity {
         bindService(intent, boundServiceConnection, Context.BIND_AUTO_CREATE);
     }
 
-    private boolean ping() {
+    private boolean ping(boolean periodic, boolean aidl) {
         String ip = ((EditText)findViewById(R.id.ip_address)).getText().toString();
         String port = ((EditText)findViewById(R.id.port)).getText().toString();
         int sleep = Integer.parseInt(((EditText) findViewById(R.id.send_after_millis)).getText().toString());
         String cStr = ip + ":" + port;
 
-        long scheduleStartTime = System.nanoTime();
+        AtomicLong scheduleStartTime = new AtomicLong(0);
 
         Runnable runnable = () -> {
             long scheduleEndTime = System.nanoTime();
+            long prevScheduleStartTime = scheduleStartTime.get();
+            scheduleStartTime.set(prevScheduleStartTime + sleep * 1000000);
 
             long startTime = System.nanoTime();
             boolean result = isReachable(ip, Integer.parseInt(port), 2000);
             long endTime = System.nanoTime();
 
             long time = (endTime - startTime) / 1000;
-            final String msg = result ? "ping(): " + time + " us" : "ping(): timeout " + cStr;
+            final String msg = result ? "ping(): conn: " + time + " us" : "ping(): timeout " + cStr;
             Log.i(TAG, msg);
 
-            Log.i(TAG, "ping(): scheduling delay: " +
-                    ((scheduleEndTime - scheduleStartTime) / 1000 - (sleep * 1000)) + " us");
+            Log.i(TAG, "ping(): sched: " +
+                    (((scheduleEndTime - prevScheduleStartTime) / 1000) - (sleep * 1000)) + " us");
 
-            runOnUiThread(() -> {
-                Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
-            });
+            if (((Switch) findViewById(R.id.toast_switch)).isChecked()) {
+                runOnUiThread(() -> {
+                    Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+                });
+            }
         };
 
-        ses.schedule(runnable, sleep, TimeUnit.MILLISECONDS);
+        if (currentFuture != null) {
+            currentFuture.cancel(true);
+            currentFuture = null;
+        }
+
+        if (aidl && mBoundService != null) {
+            try {
+                if (periodic) {
+                    // TODO: AIDL periodic call
+                    mBoundService.measure(System.nanoTime());
+                } else {
+                    // TODO: AIDL single packet call
+                    mBoundService.measure(System.nanoTime());
+                }
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        } else if (aidl) {
+            Log.wtf(TAG, "AIDL not connected");
+            return false;
+        }
+
+        scheduleStartTime.set(System.nanoTime());
+        if (periodic) {
+            currentFuture = ses.scheduleAtFixedRate(runnable, sleep, sleep, TimeUnit.MILLISECONDS);
+        } else {
+            currentFuture = ses.schedule(runnable, sleep, TimeUnit.MILLISECONDS);
+        }
         return true;
     }
 
