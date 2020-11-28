@@ -1,8 +1,5 @@
 package com.lrptest.client;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.app.Service;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -10,19 +7,32 @@ import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.os.SystemClock;
 import android.util.Log;
-import android.view.View;
-import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Switch;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.lrptest.daemon.ILrpBoundService;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity {
 
     final String TAG = "LRP_LOG_CLIENT";
     LrpClient lrpClient = new LrpClient();
     ILrpBoundService mBoundService = null;
+
+    ScheduledExecutorService ses = Executors.newScheduledThreadPool(4);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +70,10 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Service not connected", Toast.LENGTH_SHORT).show();
             }
         });
+
+        findViewById(R.id.measure_ping).setOnClickListener(v -> {
+            ping();
+        });
     }
 
     @Override
@@ -70,6 +84,48 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent();
         intent.setComponent(new ComponentName("com.lrptest.daemon","com.lrptest.daemon.LrpService"));
         bindService(intent, boundServiceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    private boolean ping() {
+        String ip = ((EditText)findViewById(R.id.ip_address)).getText().toString();
+        String port = ((EditText)findViewById(R.id.port)).getText().toString();
+        int sleep = Integer.parseInt(((EditText) findViewById(R.id.send_after_millis)).getText().toString());
+        String cStr = ip + ":" + port;
+
+        long scheduleStartTime = System.nanoTime();
+
+        Runnable runnable = () -> {
+            long scheduleEndTime = System.nanoTime();
+
+            long startTime = System.nanoTime();
+            boolean result = isReachable(ip, Integer.parseInt(port), 2000);
+            long endTime = System.nanoTime();
+
+            long time = (endTime - startTime) / 1000;
+            final String msg = result ? "ping(): " + time + " us" : "ping(): timeout " + cStr;
+            Log.i(TAG, msg);
+
+            Log.i(TAG, "ping(): scheduling delay: " +
+                    ((scheduleEndTime - scheduleStartTime) / 1000 - (sleep * 1000)) + " us");
+
+            runOnUiThread(() -> {
+                Toast.makeText(getApplicationContext(), msg, Toast.LENGTH_SHORT).show();
+            });
+        };
+
+        ses.schedule(runnable, sleep, TimeUnit.MILLISECONDS);
+        return true;
+    }
+
+    private static boolean isReachable(String addr, int openPort, int timeOutMillis) {
+        try {
+            try (Socket soc = new Socket()) {
+                soc.connect(new InetSocketAddress(addr, openPort), timeOutMillis);
+            }
+            return true;
+        } catch (IOException ex) {
+            return false;
+        }
     }
 
     public Intent putMeta(Intent it) {

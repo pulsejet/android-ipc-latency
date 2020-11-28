@@ -50,4 +50,58 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:text="aidl measure()" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginVertical="10dp"
+        android:background="@color/black" />
+
+    <TextView
+        android:textSize="20sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="IP Address" />
+
+    <EditText
+        android:id="@+id/ip_address"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:ems="10"
+        android:inputType="text"
+        android:text="google.com" />
+
+    <EditText
+        android:id="@+id/port"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:ems="10"
+        android:inputType="number"
+        android:text="80" />
+
+    <TextView
+        android:textSize="20sp"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Send after (milliseconds)" />
+
+    <EditText
+        android:id="@+id/send_after_millis"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:ems="10"
+        android:inputType="number"
+        android:text="5" />
+
+    <Button
+        android:id="@+id/measure_ping"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="ping()" />
 </LinearLayout>
