@@ -166,6 +166,7 @@ public class MainActivity extends AppCompatActivity {
     private static boolean isReachable(String addr, int openPort, int timeOutMillis) {
         try {
             try (Socket soc = new Socket()) {
+                soc.setSoLinger(true, 0);
                 soc.connect(new InetSocketAddress(addr, openPort), timeOutMillis);
             }
             return true;
